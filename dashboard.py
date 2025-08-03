@@ -115,19 +115,23 @@ if filtered_data.empty:
 else:
     # 📍 Latest Readings
     st.subheader("📊 Latest Metrics")
-    latest = filtered_data.iloc[-1]
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Power (W)", f"{latest.get('cur_power', 'N/A') / 10}" if pd.notna(latest.get('cur_power')) else "N/A")
-    col2.metric("Voltage (V)", f"{latest.get('cur_voltage', 'N/A') / 10:.1f}" if pd.notna(latest.get('cur_voltage')) else "N/A")
-    col3.metric("Current (mA)", f"{latest.get('cur_current', 'N/A')}" if pd.notna(latest.get('cur_current')) else "N/A")
+    valid_latest = filtered_data.dropna(subset=['cur_power', 'cur_voltage', 'cur_current'])
 
-    # ⚠️ Alerts
-    POWER_THRESHOLD_W = 100.0
-    CURRENT_THRESHOLD_MA = 500
-    if latest.get("cur_power") and latest["cur_power"] > POWER_THRESHOLD_W:
-        st.error(f"⚠️ High Power Alert! Power is {latest['cur_power'] / 10:.1f} W")
-    if latest.get("cur_current") and latest["cur_current"] > CURRENT_THRESHOLD_MA:
-        st.error(f"⚠️ High Current Alert! Current is {latest['cur_current']} mA")
+    if not valid_latest.empty:
+        latest = valid_latest.iloc[-1]
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Power (W)", f"{latest['cur_power'] / 10:.1f}")
+        col2.metric("Voltage (V)", f"{latest['cur_voltage'] / 10:.1f}")
+        col3.metric("Current (mA)", f"{latest['cur_current']}")
+
+        POWER_THRESHOLD_W = 100.0
+        CURRENT_THRESHOLD_MA = 500
+        if latest.get("cur_power") and latest["cur_power"] > POWER_THRESHOLD_W:
+            st.error(f"⚠️ High Power Alert! Power is {latest['cur_power'] / 10:.1f} W")
+        if latest.get("cur_current") and latest["cur_current"] > CURRENT_THRESHOLD_MA:
+            st.error(f"⚠️ High Current Alert! Current is {latest['cur_current']} mA")
+    else:
+        st.info("⚠️ No valid data found for latest metrics.")
 
     # 📅 Aggregated Summary
     if summary_period != "None":
