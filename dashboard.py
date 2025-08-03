@@ -6,12 +6,9 @@ import plotly.express as px
 from datetime import datetime
 
 # --- MongoDB Setup ---
-# REMOVED: Hardcoded MONGO_URI, DB_NAME, and COLLECTION_NAME
-
 @st.cache_resource
 def get_collection():
     """Connects to MongoDB using credentials from st.secrets."""
-    # MODIFIED: Fetch the connection string and database details from st.secrets
     client = MongoClient(st.secrets["mongo"]["uri"])
     db = client[st.secrets["mongo"]["db_name"]]
     return db[st.secrets["mongo"]["collection_name"]]
@@ -20,11 +17,12 @@ collection = get_collection()
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Energy Dashboard", layout="wide")
-st.title("🔌EnergyFlow Tracker")
-st_autorefresh(interval=600 * 1000, limit=None, key="10min_autorefresh")
+st.title("🔌 EnergyFlow Tracker")
+
+# ✅ Auto-refresh every 2 minutes
+st_autorefresh(interval=2 * 60 * 1000, limit=None, key="2min_autorefresh")
 
 # --- Fetch and Clean Data ---
-@st.cache_data
 def fetch_data():
     cursor = collection.find().sort("timestamp", 1)
     raw_docs = list(cursor)
@@ -124,14 +122,13 @@ else:
     col3.metric("Current (mA)", f"{latest.get('cur_current', 'N/A')}" if pd.notna(latest.get('cur_current')) else "N/A")
 
     # ⚠️ Alerts
-    POWER_THRESHOLD_W = 100.0  # 100W threshold
-    CURRENT_THRESHOLD_MA = 500 # 500mA threshold
+    POWER_THRESHOLD_W = 100.0
+    CURRENT_THRESHOLD_MA = 500
     if latest.get("cur_power") and latest["cur_power"] > POWER_THRESHOLD_W:
-        st.error(f"⚠️ High Power Alert! Power is {latest['cur_power'] / 10:.1f} W (Threshold: {POWER_THRESHOLD_W / 10:.1f} W)")
+        st.error(f"⚠️ High Power Alert! Power is {latest['cur_power'] / 10:.1f} W")
     if latest.get("cur_current") and latest["cur_current"] > CURRENT_THRESHOLD_MA:
-        st.error(f"⚠️ High Current Alert! Current is {latest['cur_current']} mA (Threshold: {CURRENT_THRESHOLD_MA} mA)")
+        st.error(f"⚠️ High Current Alert! Current is {latest['cur_current']} mA")
 
-    # ... (rest of the display code is unchanged) ...
     # 📅 Aggregated Summary
     if summary_period != "None":
         summary_df = get_aggregated_summary(filtered_data, summary_period)
@@ -147,7 +144,6 @@ else:
         else:
             st.info("No summary data available.")
     else:
-        # Line charts for selected range
         st.subheader("📈 Real-time Metrics Over Time")
         fig_power = px.line(filtered_data, x='timestamp', y='cur_power', title="Power (W)")
         st.plotly_chart(fig_power.update_yaxes(title_text='Power (W)'), use_container_width=True)
@@ -171,5 +167,4 @@ else:
 
 # --- Raw Data ---
 with st.expander("📄 Raw Data (Filtered)"):
-
     st.dataframe(filtered_data)
