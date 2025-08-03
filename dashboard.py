@@ -28,9 +28,10 @@ st.sidebar.header("⚙️ Device Control")
 device_on = st.sidebar.toggle("Device Switch", value=False)
 
 # Send switch command to backend API
+API_URL = st.secrets["api"]["base_url"]
 if device_on:
     try:
-        response = requests.post("http://localhost:5000/device/on")
+        response = requests.post(f"{API_URL}/device/on")
         if response.ok:
             st.sidebar.success("Device turned ON")
         else:
@@ -39,7 +40,7 @@ if device_on:
         st.sidebar.error(f"Error: {e}")
 else:
     try:
-        response = requests.post("http://localhost:5000/device/off")
+        response = requests.post(f"{API_URL}/device/off")
         if response.ok:
             st.sidebar.success("Device turned OFF")
         else:
@@ -205,4 +206,5 @@ else:
 # --- Raw Data ---
 with st.expander("📄 Raw Data (Filtered)"):
     st.dataframe(filtered_data)
+
 
