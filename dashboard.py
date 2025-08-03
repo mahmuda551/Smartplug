@@ -1,3 +1,5 @@
+tumi ei solution amr deya code er moddhe replace kore deo
+
 import streamlit as st
 from pymongo import MongoClient
 from streamlit_autorefresh import st_autorefresh
