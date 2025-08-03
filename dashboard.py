@@ -1,5 +1,3 @@
-tumi ei solution amr deya code er moddhe replace kore deo
-
 import streamlit as st
 from pymongo import MongoClient
 from streamlit_autorefresh import st_autorefresh
@@ -146,15 +144,23 @@ else:
         else:
             st.info("No summary data available.")
     else:
-        st.subheader("📈 Real-time Metrics Over Time")
-        fig_power = px.line(filtered_data, x='timestamp', y='cur_power', title="Power (W)")
-        st.plotly_chart(fig_power.update_yaxes(title_text='Power (W)'), use_container_width=True)
-        
-        fig_voltage = px.line(filtered_data, x='timestamp', y='cur_voltage', title="Voltage (V)")
-        st.plotly_chart(fig_voltage.update_yaxes(title_text='Voltage (V)'), use_container_width=True)
-
-        fig_current = px.line(filtered_data, x='timestamp', y='cur_current', title="Current (mA)")
-        st.plotly_chart(fig_current.update_yaxes(title_text='Current (mA)'), use_container_width=True)
+        st.subheader("📈 Combined Power, Voltage, and Current Over Time")
+        melted = pd.melt(
+            filtered_data,
+            id_vars=["timestamp"],
+            value_vars=["cur_power", "cur_voltage", "cur_current"],
+            var_name="Metric",
+            value_name="Value"
+        )
+        fig_combined = px.line(
+            melted,
+            x="timestamp",
+            y="Value",
+            color="Metric",
+            labels={"timestamp": "Time", "Value": "Reading", "Metric": "Sensor"},
+            title="Combined Power, Voltage, and Current"
+        )
+        st.plotly_chart(fig_combined, use_container_width=True)
 
         # ✅ Total energy usage calculation
         st.subheader("⚡ Total Energy Usage (kWh)")
@@ -164,7 +170,7 @@ else:
         df_energy = df_energy[df_energy["time_diff_hr"] > 0]
         df_energy["power_wh"] = df_energy["cur_power"] * df_energy["time_diff_hr"]
         total_energy_kwh = df_energy["power_wh"].sum() / 1000
-        
+
         st.success(f"Total Energy Used: **{total_energy_kwh:.4f} kWh** between {start_date} and {end_date}")
 
 # --- Raw Data ---
