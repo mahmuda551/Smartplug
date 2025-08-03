@@ -4,6 +4,7 @@ from streamlit_autorefresh import st_autorefresh
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
+import requests
 
 # --- MongoDB Setup ---
 @st.cache_resource
@@ -21,6 +22,30 @@ st.title("🔌 EnergyFlow Tracker")
 
 # ✅ Auto-refresh every 2 minutes
 st_autorefresh(interval=2 * 60 * 1000, limit=None, key="2min_autorefresh")
+
+# --- Device Switch ---
+st.sidebar.header("⚙️ Device Control")
+device_on = st.sidebar.toggle("Device Switch", value=False)
+
+# Send switch command to backend API
+if device_on:
+    try:
+        response = requests.post("http://localhost:5000/device/on")
+        if response.ok:
+            st.sidebar.success("Device turned ON")
+        else:
+            st.sidebar.error("Failed to turn ON device")
+    except Exception as e:
+        st.sidebar.error(f"Error: {e}")
+else:
+    try:
+        response = requests.post("http://localhost:5000/device/off")
+        if response.ok:
+            st.sidebar.success("Device turned OFF")
+        else:
+            st.sidebar.error("Failed to turn OFF device")
+    except Exception as e:
+        st.sidebar.error(f"Error: {e}")
 
 # --- Fetch and Clean Data ---
 def fetch_data():
